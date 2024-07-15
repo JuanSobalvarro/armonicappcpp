@@ -13,13 +13,24 @@
 #include <QList>
 #include <QLabel>
 #include <QGraphicsWidget>
+#include <QHBoxLayout>
+#include <QVBoxLayout>
+#include <QGridLayout>
+#include <QPushButton>
 
 #include <QtCharts/QBarSeries>
 #include <QtCharts/QBarSet>
 #include <QtCharts/QBarCategoryAxis>
 #include <QtCharts/QChartView>
 #include <QtCharts/QValueAxis>
+#include <QLineSeries>
 
+#include <QtDebug>
+
+#include <QAudioInput>
+#include <QIODevice>
+#include <QByteArray>
+#include <QAudioFormat>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -39,8 +50,13 @@ public:
 
 private slots:
     void testAction(std::string activatedBy);
+    void errorMsgBox(const QString msg, QMessageBox::Icon icon);
 
-    void selectDevice(const QString &deviceName);
+    void selectDevice(const QAudioDevice &device);
+
+    void startAudioRecording();
+    void stopAudioRecording();
+    void handleAudioInput();
 
 private:
     Ui::MainWindow *ui;
@@ -48,23 +64,24 @@ private:
     void createActions();
     void createMenus();
     void createStatusBar();
-    void updateStatusBar(const QString &message);
+    void createBarChart();
+    void createAudioChart();
+    void createCentralWidget();
+    void createLayout();
+
+    void setAll();
 
     void populateAudioDeviceMenu();
 
-    void createBarChart();
+    void updateStatusBar(const QString &message);
 
-    // Bar Chart
-    QChart *barChart;
+    QAudioFormat createAudioFormat(unsigned int sampleRate=44100,
+                                unsigned int channelCount=1,
+                                QAudioFormat::SampleFormat sampleFormat=QAudioFormat::Int16);
 
-    // Audio devices
-    QList<QAudioDevice> *inputDevices;
-    QList<QAudioDevice> *outputDevices;
+    void setUpAudio();
 
-    QStatusBar *statusBar;
-    QLabel *statusMsg;
-
-    // Menus
+    // Menu components
     QMenuBar *menuBar;
 
     QMenu *testMenu;
@@ -72,7 +89,38 @@ private:
     QMenu *inputDeviceMenu;
     QMenu *outputDeviceMenu;
 
+    // Buttons
+    QPushButton *startRecordingButton;
+    QPushButton *stopRecordingButton;
+
+    // Status Bar
+    QStatusBar *statusBar;
+    QLabel *statusMsg;
+
+    // Layout components
+    QGridLayout *layout;
+    QHBoxLayout *buttonsLayout;
+    QHBoxLayout *chartsLayout;
+    QWidget *centralWidget;
+
     // Actions
     QAction *testAct;
+
+    // Charts
+    QChart *barChart;
+    QChartView *barChartView;
+
+    QChart *audioChart;
+    QChartView *audioChartView;
+
+    // Audio
+    QList<QAudioDevice> *inputDevices;
+    QList<QAudioDevice> *outputDevices;
+    QAudioDevice deviceSelected;
+
+    QAudioFormat audioFormat;
+    QAudioInput *audioInput;
+    QIODevice *audioIODevice;
+    QByteArray audioBuffer;
 };
 #endif // MAINWINDOW_H
