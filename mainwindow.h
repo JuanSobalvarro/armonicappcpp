@@ -1,6 +1,8 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include "audiobufferiodevice.h"
+
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QMenu>
@@ -27,7 +29,7 @@
 
 #include <QtDebug>
 
-#include <QAudioInput>
+#include <QAudioSource>
 #include <QIODevice>
 #include <QByteArray>
 #include <QAudioFormat>
@@ -56,7 +58,7 @@ private slots:
 
     void startAudioRecording();
     void stopAudioRecording();
-    void handleAudioInput();
+    void handleAudioInputStateChanged(QAudio::State state);
 
 private:
     Ui::MainWindow *ui;
@@ -119,8 +121,7 @@ private:
     QAudioDevice deviceSelected;
 
     QAudioFormat audioFormat;
-    QAudioInput *audioInput;
-    QIODevice *audioIODevice;
-    QByteArray audioBuffer;
+    QAudioSource *audioInput;
+    AudioBufferIODevice *audioIODevice;
 };
 #endif // MAINWINDOW_H

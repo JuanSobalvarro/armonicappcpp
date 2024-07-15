@@ -16,7 +16,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     // AUDIO COLLECTING
     setUpAudio();
-
 }
 
 MainWindow::~MainWindow()
@@ -237,19 +236,42 @@ QAudioFormat MainWindow::createAudioFormat(unsigned int sampleRate, unsigned int
 
 void MainWindow::setUpAudio()
 {
+    if (deviceSelected.isNull())
+    {
+        qWarning() << "Setting audio up without a device selected\n";
+        return;
+    }
     // Configure Audio Format
     audioFormat = createAudioFormat(44100, 1, QAudioFormat::Int16);
 
-    // Create QAudioInput
-    audioInput = new QAudioInput(audioFormat, this);
+    if (!deviceSelected.isFormatSupported(audioFormat))
+    {
+        qWarning() << "Format not supported by selected device.";
+        const QString msg = "Device " + deviceSelected.description() + " does not support format";
+        errorMsgBox(msg, QMessageBox::Warning);
+        return;
+    }
 
-    // Create Custom
+    // create audio input
+    audioInput = new QAudioSource(deviceSelected, audioFormat);
+    connect(audioInput, &QAudioSource::stateChanged, this, &MainWindow::handleAudioInputStateChanged);
 
+    audioIODevice = new AudioBufferIODevice();
 
+    if (!audioIODevice) {
+        qCritical() << "audioIODevice is null\n";
+        return;
+    }
+
+    if (!audioIODevice->open(QIODevice::WriteOnly))
+    {
+        qCritical() << "Failed to open audioIODevice for writing\n";
+        return;
+    }
 }
+// SLOTS
 
-// slots
-
+// TESTING ACTION
 void MainWindow::testAction(std::string activatedBy)
 {
     QMessageBox msgBox;
@@ -259,6 +281,7 @@ void MainWindow::testAction(std::string activatedBy)
     msgBox.exec();
 }
 
+// Error Message Box
 void MainWindow::errorMsgBox(const QString msg, QMessageBox::Icon icon)
 {
     QMessageBox msgBox;
@@ -268,6 +291,8 @@ void MainWindow::errorMsgBox(const QString msg, QMessageBox::Icon icon)
     msgBox.exec();
 }
 
+
+// Change the selected device to collect audio
 void MainWindow::selectDevice(const QAudioDevice &device)
 {
     // Check if device is already selected
@@ -291,6 +316,9 @@ void MainWindow::selectDevice(const QAudioDevice &device)
     // UPDATE device selected
     deviceSelected = device;
 
+    // Setup audio
+    setUpAudio();
+
     // UPDATE UI
     const QString str = "Selected device: " + deviceSelected.description();
     updateStatusBar(str);
@@ -298,6 +326,12 @@ void MainWindow::selectDevice(const QAudioDevice &device)
 
 void MainWindow::startAudioRecording()
 {
+    if (deviceSelected.isNull())
+    {
+        errorMsgBox("You should select a device before start recording", QMessageBox::Warning);
+        return;
+    }
+
     if (startRecordingButton->isFlat())
     {
         return;
@@ -307,7 +341,7 @@ void MainWindow::startAudioRecording()
     startRecordingButton->setFlat(true);
     stopRecordingButton->setFlat(false);
 
-    // ...
+    audioInput->start(audioIODevice);
 }
 
 void MainWindow::stopAudioRecording()
@@ -326,10 +360,31 @@ void MainWindow::stopAudioRecording()
     startRecordingButton->setFlat(false);
     stopRecordingButton->setFlat(true);
 
-    // ...
+    audioInput->stop();
 }
 
-void MainWindow::handleAudioInput()
+void MainWindow::handleAudioInputStateChanged(QAudio::State state)
 {
+    switch (state)
+    {
+    case QAudio::IdleState:
+        // Finished playing (no more data)
+        audioInput->stop();
+        audioIODevice->close();
+        qInfo() << "Audio input idle state";
+        break;
 
+    case QAudio::StoppedState:
+        // Stopped for other reasons
+        if (audioInput->error() != QAudio::NoError)
+        {
+            // Error handling
+            qWarning() << "Audio input error occurred";
+        }
+        break;
+
+    default:
+        // Other cases - do nothing
+        break;
+    }
 }
