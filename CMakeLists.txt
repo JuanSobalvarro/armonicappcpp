@@ -27,6 +27,10 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         audiobufferiodevice.h audiobufferiodevice.cpp
+        audiohandler.h audiohandler.cpp
+        charthandler.h charthandler.cpp
+        uicomponents.h uicomponents.cpp
+        utils.h utils.cpp
 
     )
 # Define target properties for Android with Qt 6 as:

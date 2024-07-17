@@ -1,390 +1,76 @@
 #include "mainwindow.h"
+#include "utils.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
-    this->setGeometry(0, 0, 1280, 480);
+    this->setGeometry(100, 100, 720, 480);
 
-    // SETUP GUI
-    createActions();
-    createMenus();
-    createStatusBar();
-    createBarChart();
-    createAudioChart();
-    createCentralWidget();
-    createLayout();
+    // Initialize Audio Handler
+    audioHandler = new AudioHandler();
 
-    // AUDIO COLLECTING
-    setUpAudio();
+    // Initialize UI Components
+    uiComponents = new UIComponents(this);
+    uiComponents->populateAudioDeviceMenu(*audioHandler->inputDevices,
+                                          *audioHandler->outputDevices,
+                                          [this](const QAudioDevice &device)
+                                          {
+                                              selectDevice(device);
+                                          });
+    uiComponents->connectRecordButtons(
+                                        // Start Recording lambda to callback
+                                        [this]()
+                                        {
+                                            startRecordingCallback();
+                                        },
+                                        // Stop Recording lambda to callback
+                                        [this]()
+                                        {
+                                            stopRecordingCallback();
+                                        });
 }
 
 MainWindow::~MainWindow()
 {
-    qInfo() << "MainWindow destructor called\n";
-
-    delete inputDevices;
-    delete outputDevices;
-    delete barChartView;
-    delete audioChartView;
-
-    stopAudioRecording(); // Ensure audioInput is stopped and cleaned up
+    delete uiComponents;
 }
 
-void MainWindow::populateAudioDeviceMenu()
-{
-    // Create an action group for exclusive selection
-    QActionGroup *deviceActionGroup = new QActionGroup(this);
-    deviceActionGroup->setExclusive(true);
-
-    // Initialize the QList objects
-    inputDevices = new QList<QAudioDevice>;
-    outputDevices = new QList<QAudioDevice>;
-
-    // Retrieve and add audio input/output devices
-    *inputDevices = QMediaDevices::audioInputs();
-    *outputDevices = QMediaDevices::audioOutputs();
-
-    for (const QAudioDevice &device : *inputDevices)
-    {
-        QAction *deviceAction = inputDeviceMenu->addAction(device.description());
-        deviceAction->setCheckable(true);
-        deviceAction->setActionGroup(deviceActionGroup);
-        connect(deviceAction, &QAction::triggered, this, [this, device]() {
-            selectDevice(device);
-        });
-    }
-
-    for (const QAudioDevice &device : *outputDevices)
-    {
-        QAction *deviceAction = outputDeviceMenu->addAction(device.description());
-        deviceAction->setCheckable(true);
-        deviceAction->setActionGroup(deviceActionGroup);
-        connect(deviceAction, &QAction::triggered, this, [this, device]() {
-            selectDevice(device);
-        });
-    }
-
-    qInfo() << "MAINWINDOW::POPULATEAUDIODEVICEMENU: Audio Devices recognized successfully\n";
-}
-
-void MainWindow::createActions()
-{
-    testAct = new QAction(QIcon::fromTheme(QIcon::ThemeIcon::DialogInformation),
-                          tr("&KKCK"), this);
-    testAct->setWhatsThis("TEST WHATS THIS");
-    // connect with a lambda function since testAction needs parameters
-    connect(testAct, &QAction::triggered, this, [this]()
-            {this->testAction("KKCK");
-            });
-
-    qInfo() << "MAINWINDOW::CREATEACTIONS: Actions created successfully\n";
-}
-
-void MainWindow::createMenus()
-{
-    menuBar = new QMenuBar(this);
-
-    deviceMenu = new QMenu("Device", this);
-    inputDeviceMenu = deviceMenu->addMenu("Input Devices");
-    outputDeviceMenu = deviceMenu->addMenu("Output Devices");
-    menuBar->addMenu(deviceMenu);
-
-    populateAudioDeviceMenu();
-
-    setMenuBar(menuBar);
-
-    qInfo() << "MAINWINDOW::CREATEMENUS: Menus created successfully\n";
-}
-
-void MainWindow::createStatusBar()
-{
-    statusBar = new QStatusBar(this);
-    statusBar->setStyleSheet("QStatusBar { border-top: 1px solid black; }");
-
-    statusMsg = new QLabel();
-
-    statusBar->addWidget(statusMsg);
-
-    setStatusBar(statusBar);
-
-    qInfo() << "MAINWINDOW::CREATESTATUSBAR: Status bar created\n";
-}
-
-void MainWindow::createBarChart()
-{
-    // DATA
-
-    // Categories
-    QStringList categories;
-    categories << "uwu" << "nya" << "nichan";
-
-    // Values
-    QBarSet *set = new QBarSet("KKCK data");
-    *set << 69 << 420 << 666;
-
-    // The sets should be store in a bar series
-    QBarSeries *series = new QBarSeries();
-    series->append(set);
-
-    // Create chart and add the series
-    barChart = new QChart();
-    barChart->addSeries(series);
-    barChart->setTitle("Frequencies detected");
-
-    // Set up x axis
-    QBarCategoryAxis *xAxis = new QBarCategoryAxis();
-    xAxis->append(categories);
-
-    barChart->addAxis(xAxis, Qt::AlignBottom);
-    series->attachAxis(xAxis);
-
-    // Set up y axis(values)
-    QBarCategoryAxis *yAxis = new QBarCategoryAxis();
-    yAxis->setTitleText("Frequencies");
-    barChart->addAxis(yAxis, Qt::AlignLeft);
-    series->attachAxis(yAxis);
-
-    // Create chart view and set
-    barChartView = new QChartView(barChart);
-    barChartView->setRenderHint(QPainter::Antialiasing);
-    barChartView->chart()->setTheme(QChart::ChartThemeDark);
-
-    qInfo() << "MAINWINDOW::CREATEBARCHART: Bar Chart created successfully\n";
-}
-
-void MainWindow::createAudioChart()
-{
-    audioChart = new QChart();
-
-    audioChartView = new QChartView(audioChart);
-
-    qInfo() << "MAINWINDOW::CREATEAUDIOCHART: Audio chart created successfully\n";
-}
-
-void MainWindow::createCentralWidget()
-{
-    centralWidget = new QWidget(this);
-    setCentralWidget(centralWidget);
-
-    qInfo() << "MAINWINDOW::CREATECENTRALWIDGET: Central Widget created and set\n";
-}
-
-void MainWindow::createLayout()
-{
-    layout = new QGridLayout();
-
-    // Buttons Layout
-    buttonsLayout = new QHBoxLayout();
-
-    startRecordingButton = new QPushButton("Start", this);
-    connect(startRecordingButton, &QPushButton::clicked, this, &MainWindow::startAudioRecording);
-
-    buttonsLayout->addWidget(startRecordingButton);
-
-    stopRecordingButton = new QPushButton("Stop", this);
-    connect(stopRecordingButton, &QPushButton::clicked, this, &MainWindow::stopAudioRecording);
-
-    buttonsLayout->addWidget(stopRecordingButton);
-
-
-    // Charts Layout
-    chartsLayout = new QHBoxLayout();
-
-    if (!barChartView)
-    {
-        qCritical() << "MAINWINDOW::CREATELAYOUT: BARCHARTVIEW NOT LOADED IN MEMORY\n";
-        return;
-    }
-    chartsLayout->addWidget(barChartView);
-
-    if (!audioChartView)
-    {
-        qCritical() << "MAINWINDOW::CREATELAYOUT: AUDIOCHARTVIEW NOT LOADED IN MEMORY\n";
-        return;
-    }
-    chartsLayout->addWidget(audioChartView);
-
-    // Add to mainLayout
-    layout->addLayout(buttonsLayout, 0, 0, Qt::AlignTop);
-    layout->addLayout(chartsLayout, 1, 0, Qt::AlignBottom);
-
-    // Set Central Widget layout
-    centralWidget->setLayout(layout);
-
-    qInfo() << "MAINWINDOW::CREATELAYOUT: Layout created\n";
-}
-
-void MainWindow::updateStatusBar(const QString &message)
-{
-    statusMsg->setText(message);
-}
-
-QAudioFormat MainWindow::createAudioFormat(unsigned int sampleRate, unsigned int channelCount, QAudioFormat::SampleFormat sampleFormat)
-{
-    QAudioFormat format;
-    // Set up the format, adjust these parameters as needed
-    format.setSampleRate(sampleRate);           // Sample rate (Hz)
-    format.setChannelCount(channelCount);             // Mono channel
-    format.setSampleFormat(sampleFormat);              // Sample size (bits)
-
-    if (!format.isValid()) {
-        qWarning() << "Invalid audio format settings.";
-    }
-
-    return format;
-}
-
-void MainWindow::setUpAudio()
-{
-    if (deviceSelected.isNull())
-    {
-        qWarning() << "Setting audio up without a device selected\n";
-        return;
-    }
-    // Configure Audio Format
-    audioFormat = createAudioFormat(44100, 1, QAudioFormat::Int16);
-
-    if (!deviceSelected.isFormatSupported(audioFormat))
-    {
-        qWarning() << "Format not supported by selected device.";
-        const QString msg = "Device " + deviceSelected.description() + " does not support format";
-        errorMsgBox(msg, QMessageBox::Warning);
-        return;
-    }
-
-    // create audio input
-    audioInput = new QAudioSource(deviceSelected, audioFormat);
-    connect(audioInput, &QAudioSource::stateChanged, this, &MainWindow::handleAudioInputStateChanged);
-
-    audioIODevice = new AudioBufferIODevice();
-
-    if (!audioIODevice) {
-        qCritical() << "audioIODevice is null\n";
-        return;
-    }
-
-    if (!audioIODevice->open(QIODevice::WriteOnly))
-    {
-        qCritical() << "Failed to open audioIODevice for writing\n";
-        return;
-    }
-}
-// SLOTS
-
-// TESTING ACTION
-void MainWindow::testAction(std::string activatedBy)
-{
-    QMessageBox msgBox;
-    QString str = "Activated by: " + QString::fromStdString(activatedBy);
-    msgBox.setText(str);
-    msgBox.setStandardButtons(QMessageBox::Ok);
-    msgBox.exec();
-}
-
-// Error Message Box
-void MainWindow::errorMsgBox(const QString msg, QMessageBox::Icon icon)
-{
-    QMessageBox msgBox;
-    msgBox.setText(msg);
-    msgBox.setIcon(icon);
-    msgBox.setStandardButtons(QMessageBox::Ok);
-    msgBox.exec();
-}
-
-
-// Change the selected device to collect audio
 void MainWindow::selectDevice(const QAudioDevice &device)
 {
-    // Check if device is already selected
-    if (deviceSelected == device)
+    if (!audioHandler->deviceSelected.isNull())
     {
-        qInfo() << "Device already selected\n";
-        return;
+        stopRecordingCallback();
     }
+    // Update device in audio
+    audioHandler->selectDevice(device);
 
-    // Check if device support format
-    if (device.isFormatSupported(createAudioFormat()))
-    {
-        qInfo() << "Selected device supports desired audio format.";
-    }
-    else
-    {
-        const QString msg = "Device " + device.description() + " does not support format";
-        errorMsgBox(msg, QMessageBox::Warning);
-    }
-
-    // UPDATE device selected
-    deviceSelected = device;
-
-    // Setup audio
-    setUpAudio();
-
-    // UPDATE UI
-    const QString str = "Selected device: " + deviceSelected.description();
-    updateStatusBar(str);
+    // Update device in UI
+    QString str = "Selected device: " + audioHandler->deviceSelected.description();
+    uiComponents->updateStatusMsg(str);
 }
 
-void MainWindow::startAudioRecording()
+void MainWindow::startRecordingCallback()
 {
-    if (deviceSelected.isNull())
+    // Start recording audio
+    if (!audioHandler->startAudioRecording())
     {
-        errorMsgBox("You should select a device before start recording", QMessageBox::Warning);
+        qInfo() << "MAINWINDOW::STARTRECORDINGCALLBACK: Error starting audio recording\n";
         return;
     }
 
-    if (startRecordingButton->isFlat())
-    {
-        return;
-    }
-    qInfo() << "Starting Record\n";
-
-    startRecordingButton->setFlat(true);
-    stopRecordingButton->setFlat(false);
-
-    audioInput->start(audioIODevice);
+    // Update UI
+    uiComponents->startButtonPressed();
 }
 
-void MainWindow::stopAudioRecording()
+void MainWindow::stopRecordingCallback()
 {
-    if (stopRecordingButton->isFlat())
+    // Stop audio
+    if (!audioHandler->stopAudioRecording())
     {
+        qInfo() << "MAINWINDOW::STOPRECORDINGCALLBACK: Error stopping audio recording\n";
         return;
     }
 
-    if (!startRecordingButton->isFlat())
-    {
-        return;
-    }
-    qInfo() << "Stopping Record\n";
-
-    startRecordingButton->setFlat(false);
-    stopRecordingButton->setFlat(true);
-
-    audioInput->stop();
-}
-
-void MainWindow::handleAudioInputStateChanged(QAudio::State state)
-{
-    switch (state)
-    {
-    case QAudio::IdleState:
-        // Finished playing (no more data)
-        audioInput->stop();
-        audioIODevice->close();
-        qInfo() << "Audio input idle state";
-        break;
-
-    case QAudio::StoppedState:
-        // Stopped for other reasons
-        if (audioInput->error() != QAudio::NoError)
-        {
-            // Error handling
-            qWarning() << "Audio input error occurred";
-        }
-        break;
-
-    default:
-        // Other cases - do nothing
-        break;
-    }
+    // Update UI
+    uiComponents->stopButtonPressed();
 }
