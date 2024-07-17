@@ -15,9 +15,10 @@ public:
     qint64 writeData(const char *data, qint64 len) override;
     bool open(OpenMode mode) override;
 
+    QByteArray buffer;
+
 private:
     QAudioInput *audioInput;
-    QByteArray buffer;
 };
 
 #endif // AUDIOBUFFERIODEVICE_H
