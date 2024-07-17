@@ -26,6 +26,7 @@ AudioHandler::~AudioHandler()
     delete outputDevices;
 }
 
+// Function to setup audio for a selected device
 void AudioHandler::setUpAudio(const QAudioDevice &device)
 {
     if (device.isNull())
@@ -44,7 +45,6 @@ void AudioHandler::setUpAudio(const QAudioDevice &device)
     }
 
     deviceSelected = device;
-    audioFormat = createAudioFormat();
 
     if (!deviceSelected.isFormatSupported(audioFormat))
     {
@@ -98,6 +98,7 @@ bool AudioHandler::stopAudioRecording()
     return true;
 }
 
+// Handle if the audio input change state
 void AudioHandler::handleAudioInputStateChanged(QAudio::State state)
 {
     emit audioInputStateChanged(state);
@@ -119,6 +120,7 @@ void AudioHandler::handleAudioInputStateChanged(QAudio::State state)
     }
 }
 
+// Select the device which will be used
 void AudioHandler::selectDevice(const QAudioDevice &device)
 {
     if (deviceSelected == device)
