@@ -25,7 +25,7 @@ class UIComponents : public QObject
     Q_OBJECT
 
 public:
-    UIComponents(QMainWindow *mainWindow, QObject *parent = nullptr);
+    UIComponents(QMainWindow *mainWindow, ChartHandler *charts, QObject *parent = nullptr);
     ~UIComponents();
 
     ChartHandler *chartHandler;

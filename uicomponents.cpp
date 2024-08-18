@@ -1,13 +1,13 @@
 #include "uicomponents.h"
 #include "utils.h"
 
-UIComponents::UIComponents(QMainWindow *window, QObject *parent)
+UIComponents::UIComponents(QMainWindow *window, ChartHandler *charts, QObject *parent)
     : QObject(parent)
 {
     mainWindow = window;
 
     // Initialize charts
-    chartHandler = new ChartHandler();
+    chartHandler = charts;
 
     createActions();
     createMenus();
@@ -115,13 +115,13 @@ void UIComponents::createLayouts()
     buttonsLayout->addWidget(startRecordingButton);
     buttonsLayout->addWidget(stopRecordingButton);
 
-    if (!chartHandler->audioChartView || !chartHandler->barChartView)
+    if (!chartHandler->getAudioChartView() || !chartHandler->getBarChartView())
     {
         qCritical() << "UICOMPONENTS::CREATELAYOUT: CHARTS VIEW NOT LOADED\n";
     }
 
-    chartsLayout->addWidget(chartHandler->barChartView);
-    chartsLayout->addWidget(chartHandler->audioChartView);
+    chartsLayout->addWidget(chartHandler->getBarChartView());
+    chartsLayout->addWidget(chartHandler->getAudioChartView());
 
     // Add layouts to main layout
     layout->addLayout(buttonsLayout, 0, 0);

@@ -1,32 +1,33 @@
+/*
+ * Handles all related to the charts present in the program
+ */
 #ifndef CHARTHANDLER_H
 #define CHARTHANDLER_H
 
 #include <QObject>
-#include <QtCharts/QChart>
-#include <QtCharts/QChartView>
-#include <QtCharts/QBarSeries>
-#include <QtCharts/QBarSet>
-#include <QtCharts/QBarCategoryAxis>
-#include <QtCharts/QValueAxis>
-#include <QLineSeries>
+
+#include "freqcharthandler.h"
+#include "audiocharthandler.h"
+
+#include "ffthandler.h"
 
 class ChartHandler : public QObject
 {
     Q_OBJECT
 
 public:
-    ChartHandler(QObject *parent = nullptr);
+    ChartHandler(AudioProcessor *audioProcessor, QObject *parent = nullptr);
     ~ChartHandler();
 
-    QChart *barChart;
-    QChart *audioChart;
-    QChartView *barChartView;
-    QChartView *audioChartView;
+    QChartView *getAudioChartView();
+    QChartView *getBarChartView();
 
-private:    
-    void createBarChart();
-    void createAudioChart();
+public slots:
+    void updateBarChart(const FFTHandler::fftvector &fftdata);
+
+private:
+    FreqChartHandler *freqChartHandler;
+    AudioChartHandler *audioChartHandler;
 };
 
 #endif // CHARTHANDLER_H
-

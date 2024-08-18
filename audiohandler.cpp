@@ -2,7 +2,10 @@
 #include "utils.h"
 
 AudioHandler::AudioHandler(QObject *parent)
-    : QObject(parent), audioInput(nullptr), audioIODevice(new AudioBufferIODevice(this))
+    : QObject(parent),
+    audioIODevice(new AudioBufferIODevice(this)),
+    audioProcessor(new AudioProcessor(audioIODevice, this)),
+    audioInput(nullptr)
 {    
     // Initialize and set audio devices
     inputDevices = new QList<QAudioDevice>;
@@ -54,6 +57,7 @@ void AudioHandler::setUpAudio(const QAudioDevice &device)
     }
 
     audioInput = new QAudioSource(deviceSelected, audioFormat);
+    audioInput->setBufferSize(200);
     connect(audioInput, &QAudioSource::stateChanged, this, &AudioHandler::handleAudioInputStateChanged);
     audioIODevice->open(QIODevice::WriteOnly);
 

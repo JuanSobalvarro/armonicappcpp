@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QAudioDevice>
+
 #include "audiohandler.h"
 #include "charthandler.h"
 #include "uicomponents.h"
@@ -17,6 +18,7 @@ public:
 
 private:
     AudioHandler *audioHandler;
+    ChartHandler *chartHandler;
     UIComponents *uiComponents;
 
     void selectDevice(const QAudioDevice &device);

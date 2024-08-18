@@ -2,6 +2,7 @@
 #define AUDIOHANDLER_H
 
 #include "audiobufferiodevice.h"
+#include "audioprocessor.h"
 
 #include <QObject>
 #include <QAudioSource>
@@ -18,6 +19,9 @@ public:
     ~AudioHandler();
 
     QAudioDevice deviceSelected;
+
+    AudioBufferIODevice *audioIODevice;
+    AudioProcessor *audioProcessor;
 
     QList<QAudioDevice> *inputDevices;
     QList<QAudioDevice> *outputDevices;
@@ -36,7 +40,7 @@ signals:
 private:
     QAudioFormat audioFormat;
     QAudioSource *audioInput;
-    AudioBufferIODevice *audioIODevice;
+
 
 private slots:
     void handleAudioInputStateChanged(QAudio::State state);

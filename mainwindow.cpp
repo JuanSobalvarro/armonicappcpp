@@ -9,8 +9,11 @@ MainWindow::MainWindow(QWidget *parent)
     // Initialize Audio Handler
     audioHandler = new AudioHandler();
 
+    // Initialize Charts handler
+    chartHandler = new ChartHandler(audioHandler->audioProcessor);
+
     // Initialize UI Components
-    uiComponents = new UIComponents(this);
+    uiComponents = new UIComponents(this, chartHandler);
     uiComponents->populateAudioDeviceMenu(*audioHandler->inputDevices,
                                           *audioHandler->outputDevices,
                                           [this](const QAudioDevice &device)

@@ -15,12 +15,38 @@ qint64 AudioBufferIODevice::readData(char *data, qint64 maxlen)
 
 qint64 AudioBufferIODevice::writeData(const char *data, qint64 len)
 {
-    // Process audio data here
-    buffer.append(data, len);
-    // For now, we'll just log the data length
-    qInfo() << "Received audio data: " << len << " bytes";
-    return len;
+    // Write in buffer
+    static const int resolution = 4;
+
+    if (buffer.isEmpty())
+    {
+        buffer.reserve(sampleCount);
+        for (int i = 0; i < sampleCount; i++)
+            buffer.append(QPointF(i, 0));
+
+    }
+    int start = 0;
+
+    const int availableSamples = int(len) / resolution;
+
+    if (availableSamples < sampleCount)
+    {
+        start = sampleCount - availableSamples;
+        for (int s = 0; s < start; s++)
+            buffer[s].setY(buffer.at(s + availableSamples).y());
+    }
+
+    for (int s = start; s < sampleCount; s++, data += resolution)
+        buffer[s].setY(qreal(uchar(*data) - 128) / qreal(128));
+
+    // Write in byte array
+    QByteArray byteArray(data, len);
+    emit audioDataReady(byteArray);  // Emit signal with new audio data
+
+    qInfo() << "AUDIOBUFFERIODEVICE::WRITEDATA: DATA READY\n";
+    return (sampleCount - start) * resolution;
 }
+
 
 bool AudioBufferIODevice::open(OpenMode mode)
 {
