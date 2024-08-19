@@ -39,9 +39,7 @@ qint64 AudioBufferIODevice::writeData(const char *data, qint64 len)
     for (int s = start; s < sampleCount; s++, data += resolution)
         buffer[s].setY(qreal(uchar(*data) - 128) / qreal(128));
 
-    // Write in byte array
-    QByteArray byteArray(data, len);
-    emit audioDataReady(byteArray);  // Emit signal with new audio data
+    emit audioDataReady();  // Emit signal with new audio data
 
     qInfo() << "AUDIOBUFFERIODEVICE::WRITEDATA: DATA READY\n";
     return (sampleCount - start) * resolution;

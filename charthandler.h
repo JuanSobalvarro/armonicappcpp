@@ -22,9 +22,6 @@ public:
     QChartView *getAudioChartView();
     QChartView *getBarChartView();
 
-public slots:
-    void updateBarChart(const FFTHandler::fftvector &fftdata);
-
 private:
     FreqChartHandler *freqChartHandler;
     AudioChartHandler *audioChartHandler;

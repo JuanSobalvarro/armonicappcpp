@@ -17,10 +17,10 @@ public:
 
     QList<QPointF> buffer;
 
-    static const int sampleCount = 2000;
+    static const int sampleCount = 512;
 
 signals:
-    void audioDataReady(const QByteArray &data);
+    void audioDataReady();
 
 protected:
     qint64 readData(char *data, qint64 maxlen) override;

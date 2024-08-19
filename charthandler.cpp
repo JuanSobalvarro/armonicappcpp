@@ -22,8 +22,3 @@ QChartView *ChartHandler::getBarChartView()
 {
     return freqChartHandler->getBarChartView();
 }
-
-void ChartHandler::updateBarChart(const FFTHandler::fftvector &fftdata)
-{
-    freqChartHandler->fftProcessAudioData(fftdata);
-}

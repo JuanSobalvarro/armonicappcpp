@@ -9,6 +9,7 @@
 
 #include "ffthandler.h"
 #include "audiobufferiodevice.h"
+#include "utils.h"
 
 class AudioProcessor : public QObject
 {
@@ -23,14 +24,14 @@ public:
     int sampleCount = 2000;
 
 public slots:
-    void processAudioData(const QByteArray &data);
+    void processAudioData();
 
 signals:
     void fftDataReady(const std::vector<std::complex<double>> &fftResult);
 
 private:
-    void updateAudioSeries(const QByteArray &data);
-    void updateFrequencySeries(FFTHandler::fftvector result);
+    void updateAudioSeries();
+    void updateFrequencySeries(const std::vector<double>& normalizedFFTData);
 
     AudioBufferIODevice *bufferIODevice;
     FFTHandler *fftHandler;

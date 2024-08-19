@@ -3,6 +3,8 @@
 
 #include <vector>
 #include <complex>
+#include <algorithm>
+#include <cmath>
 
 #define PI 3.14159265358979323846
 
@@ -18,7 +20,11 @@ public:
     void doFFT(fftvector& input);
 
     // Method to get the result of the FFT
-    fftvector getFFTResult() const;
+    fftvector getRawFFTResult();
+
+    std::vector<double> getFFTResult();
+
+    std::vector<double> normalizedFFTResult();
 
 private:
     // FFT recursion

@@ -4,10 +4,6 @@ FreqChartHandler::FreqChartHandler(AudioProcessor *audioProcessor, QObject *pare
     : QObject(parent), audioProcessor(audioProcessor),freqChart(nullptr), freqChartView(nullptr)
 {
     createFreqChart();
-
-    // Connect the signal from AudioProcessor to handle FFT data
-    connect(audioProcessor, &AudioProcessor::fftDataReady,
-            this, &FreqChartHandler::fftProcessAudioData);
 }
 
 FreqChartHandler::~FreqChartHandler()
@@ -25,12 +21,14 @@ void FreqChartHandler::createFreqChart()
     freqChart->setTitle("Frequency Spectrum");
 
     QValueAxis *xAxis = new QValueAxis();
+    xAxis->setRange(0, 1000);
     xAxis->setLabelFormat("%d");
     xAxis->setTitleText("Frequency (Hz)");
     freqChart->addAxis(xAxis, Qt::AlignBottom);
     audioProcessor->frequencySeries->attachAxis(xAxis);
 
     QValueAxis *yAxis = new QValueAxis();
+    yAxis->setRange(0, 100);
     yAxis->setTitleText("Magnitude");
     freqChart->addAxis(yAxis, Qt::AlignLeft);
     audioProcessor->frequencySeries->attachAxis(yAxis);
@@ -46,19 +44,3 @@ QChartView* FreqChartHandler::getBarChartView()
     return freqChartView;
 }
 
-void FreqChartHandler::updateChart(const FFTHandler::fftvector &fftData)
-{
-    audioProcessor->frequencySeries->clear();
-
-    for (size_t i = 0; i < fftData.size(); ++i)
-    {
-        double freq = minFreq + (maxFreq - minFreq) * i / fftData.size();
-        double magnitude = std::abs(fftData[i]);
-        audioProcessor->frequencySeries->append(freq, magnitude);
-    }
-}
-
-void FreqChartHandler::fftProcessAudioData(const FFTHandler::fftvector &fftdata)
-{
-    updateChart(fftdata);
-}

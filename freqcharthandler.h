@@ -24,12 +24,8 @@ public:
     int minFreq = 0;
     int maxFreq = 1000;
 
-public slots:
-    void fftProcessAudioData(const FFTHandler::fftvector &fftData);
-
 private:
     void createFreqChart();
-    void updateChart(const FFTHandler::fftvector &fftData);
 
     AudioProcessor *audioProcessor;
     QChart *freqChart;
